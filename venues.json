@@ -1,0 +1,20 @@
+{
+  "_help": "One entry per venue. 'platform' picks the scraper adapter. For Book a Court / ClubSpark venues, 'slug' is the part of the venue's booking URL after the domain, e.g. bookacourt.tennis.com.au/JonasBradleyPark -> JonasBradleyPark.",
+  "days_ahead": 7,
+  "venues": [
+    {
+      "id": "jonas-bradley-park",
+      "name": "Jonas Bradley Park Tennis Courts",
+      "suburb": "The Ponds",
+      "address": "165 The Ponds Boulevard, The Ponds NSW 2769",
+      "sport": "tennis",
+      "lat": -33.7016,
+      "lng": 150.9105,
+      "platform": "clubspark",
+      "host": "play.tennis.com.au",
+      "slug": "JonasBradleyPark",
+      "booking_url": "https://bookacourt.tennis.com.au/JonasBradleyPark",
+      "price_note": "Council courts, pay online"
+    }
+  ]
+}

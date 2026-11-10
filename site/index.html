@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CourtFinder — free courts near you</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f6f1;--card:#fff;--ink:#15201a;--muted:#5d6b63;--line:#e1e6df;--brand:#1f7a4d;--soft:#e3f1e8;--warn:#b26a00;--warn-bg:#fdf0dc}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer;border:none;background:none}
+a{color:inherit;text-decoration:none}
+.app{max-width:560px;margin:0 auto;min-height:100vh}
+header{padding:18px 18px 8px;position:sticky;top:0;background:var(--bg);z-index:5}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;letter-spacing:-.5px}.logo span{color:var(--brand)}
+.upd{font-size:12px;color:var(--muted);text-align:right}
+.search{margin-top:12px;display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:0 12px}
+.search input{flex:1;border:none;outline:none;font:inherit;padding:12px 0;background:transparent;font-size:15px}
+.scroller{display:flex;gap:8px;overflow-x:auto;padding:10px 18px;scrollbar-width:none}.scroller::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:8px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:14px;font-weight:500;white-space:nowrap}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.day{flex:none;width:54px;padding:8px 0;border-radius:12px;background:var(--card);border:1px solid var(--line);text-align:center}
+.day small{display:block;font-size:11px;color:var(--muted);text-transform:uppercase}.day b{font-size:18px;font-family:'Space Grotesk',sans-serif}
+.day.on{background:var(--brand);border-color:var(--brand);color:#fff}.day.on small{color:#d6eedf}
+.seg{display:flex;background:#e7ebe5;border-radius:10px;padding:3px;margin:0 18px 10px;width:max-content}
+.seg button{padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+main{padding:0 18px 60px}
+.banner{font-size:13px;padding:10px 12px;border-radius:10px;margin-bottom:12px;background:var(--warn-bg);color:var(--warn)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.name{font-weight:700;font-size:16px}.meta{font-size:13px;color:var(--muted);margin-top:3px}
+.stale{display:inline-block;font-size:11px;font-weight:700;color:var(--warn);background:var(--warn-bg);padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:2px}
+.court{margin-top:12px}.court-name{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.slots{display:flex;flex-wrap:wrap;gap:6px}
+.slot{font-size:13px;font-weight:600;padding:7px 10px;border-radius:9px;background:var(--soft);color:var(--brand);border:1.5px solid transparent;transition:border-color .12s}
+.slot:hover{border-color:var(--brand)}
+.slot::after{content:" ↗";font-size:11px;opacity:.6}
+.none{font-size:13px;color:var(--muted);margin-top:10px}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px}
+.book{font-size:13px;font-weight:700;color:var(--brand)}
+.empty{text-align:center;color:var(--muted);padding:50px 20px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="top"><div class="logo">Court<span>Finder</span></div><div class="upd" id="upd">Loading…</div></div>
+    <div class="search">🔎<input id="q" placeholder="Search venues or suburbs" autocomplete="off"></div>
+  </header>
+  <div class="scroller" id="sports"></div>
+  <div class="scroller" id="days"></div>
+  <div class="seg" id="tod">
+    <button data-v="all" class="on">Any time</button><button data-v="am">Morning</button><button data-v="pm">Afternoon</button><button data-v="eve">Evening</button>
+  </div>
+  <main id="main"></main>
+</div>
+<script>
+const ICONS = {tennis:'🎾',basketball:'🏀',futsal:'⚽',soccer:'⚽',swimming:'🏊',badminton:'🏸',cricket:'🏏',pickleball:'🥒',netball:'🏐'};
+const HOME = {lat:-33.7426, lng:150.9213, label:'Kings Langley'}; // default centre until the browser shares location
+const S = {data:null, sport:'all', day:null, tod:'all', q:'', origin:HOME};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = t => { const [h,m] = t.split(':').map(Number); return `${h%12||12}${m?':'+String(m).padStart(2,'0'):''}${h<12?'am':'pm'}`; };
+const km = (a,b) => { const R=6371,r=x=>x*Math.PI/180,dl=r(b.lat-a.lat),dn=r(b.lng-a.lng);
+  return 2*R*Math.asin(Math.sqrt(Math.sin(dl/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dn/2)**2)); };
+const localISO = d => new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+const ago = iso => { if(!iso) return 'never'; const m = Math.round((Date.now()-new Date(iso))/60000);
+  return m<1?'just now':m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} h ago`:`${Math.round(m/1440)} d ago`; };
+const inTod = t => { const h=+t.slice(0,2); return S.tod==='all'||(S.tod==='am'&&h<12)||(S.tod==='pm'&&h>=12&&h<17)||(S.tod==='eve'&&h>=17); };
+function isPast(slot){ if(slot.date!==localISO(new Date())) return false; const n=new Date(); return slot.start <= `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; }
+
+function render(){
+  const D = S.data; if(!D) return;
+  $('upd').innerHTML = `Updated ${ago(D.generated)}<br>near ${esc(S.origin.label)}`;
+  const sports = ['all', ...new Set(D.venues.map(v=>v.sport))];
+  $('sports').innerHTML = sports.map(s=>`<button class="chip ${S.sport===s?'on':''}" data-s="${s}">${s==='all'?'All sports':(ICONS[s]||'🏟️')+' '+s[0].toUpperCase()+s.slice(1)}</button>`).join('');
+  const days = [...Array(7)].map((_,i)=>{ const d=new Date(); d.setDate(d.getDate()+i); return d; });
+  S.day ??= localISO(days[0]);
+  $('days').innerHTML = days.map((d,i)=>`<button class="day ${S.day===localISO(d)?'on':''}" data-d="${localISO(d)}"><small>${i?d.toLocaleDateString('en-AU',{weekday:'short'}):'Today'}</small><b>${d.getDate()}</b></button>`).join('');
+  document.querySelectorAll('#tod button').forEach(b=>b.classList.toggle('on', b.dataset.v===S.tod));
+
+  const q = S.q.trim().toLowerCase();
+  const rows = D.venues
+    .filter(v => (S.sport==='all'||v.sport===S.sport) && (!q || `${v.name} ${v.suburb} ${v.sport}`.toLowerCase().includes(q)))
+    .map(v => {
+      const slots = v.slots.filter(s => s.date===S.day && inTod(s.start) && !isPast(s));
+      const dist = (v.lat!=null && v.lng!=null) ? km(S.origin, v) : null;
+      return {v, slots, dist};
+    })
+    .sort((a,b)=> (b.slots.length>0)-(a.slots.length>0) || (a.dist??999)-(b.dist??999));
+
+  let html = D.demo ? `<div class="banner">Showing sample data. Run the scraper without <code>--demo</code> for real times.</div>` : '';
+  if(!rows.length) html += `<div class="empty">No venues match.</div>`;
+  for(const {v, slots, dist} of rows){
+    const byCourt = {}; slots.forEach(s => (byCourt[s.court] ??= []).push(s));
+    const courts = Object.entries(byCourt).sort(([a],[b])=>a.localeCompare(b, undefined, {numeric:true}));
+    html += `<div class="card">
+      <div class="name">${ICONS[v.sport]||'🏟️'} ${esc(v.name)}${v.status==='stale'?'<span class="stale">May be out of date</span>':''}</div>
+      <div class="meta">${esc(v.suburb)}${dist!=null?` · ${dist.toFixed(1)} km`:''}${v.price_note?` · ${esc(v.price_note)}`:''}</div>
+      ${courts.length ? courts.map(([c, ss]) => `<div class="court"><div class="court-name">${esc(c)}</div><div class="slots">${
+          ss.sort((a,b)=>a.start.localeCompare(b.start)).map(s=>`<a class="slot" href="${esc(s.booking_url)}" target="_blank" rel="noopener" title="Book ${esc(c)} at ${fmt(s.start)} on the venue's site">${fmt(s.start)}</a>`).join('')
+        }</div></div>`).join('') : `<div class="none">No free times in this window.</div>`}
+      <div class="foot"><span class="meta">Checked ${ago(v.updated)}</span>${v.booking_url?`<a class="book" href="${esc(v.booking_url)}" target="_blank" rel="noopener">Venue booking page ↗</a>`:''}</div>
+    </div>`;
+  }
+  $('main').innerHTML = html;
+}
+
+$('sports').onclick = e => { const b=e.target.closest('[data-s]'); if(b){ S.sport=b.dataset.s; render(); } };
+$('days').onclick = e => { const b=e.target.closest('[data-d]'); if(b){ S.day=b.dataset.d; render(); } };
+$('tod').onclick = e => { const b=e.target.closest('[data-v]'); if(b){ S.tod=b.dataset.v; render(); } };
+$('q').oninput = e => { S.q=e.target.value; render(); };
+
+async function load(){
+  try{
+    const r = await fetch('data/availability.json?t='+Date.now(), {cache:'no-store'});
+    S.data = await r.json(); render();
+  }catch(e){ $('main').innerHTML = `<div class="empty">Couldn't load availability. Try again shortly.</div>`; $('upd').textContent=''; }
+}
+try{ navigator.geolocation?.getCurrentPosition(p => { S.origin={lat:p.coords.latitude,lng:p.coords.longitude,label:'you'}; render(); }, ()=>{}, {timeout:8000}); }catch{}
+load();
+setInterval(load, 5*60*1000);          // pick up fresh scrapes while the page is open
+setInterval(render, 60*1000);          // hide slots as they pass, refresh "x min ago"
+</script>
+</body>
+</html>
