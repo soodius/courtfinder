@@ -25,26 +25,35 @@ tests/                       ← parser tests
 5. When it goes green, your app is live at `https://<your-username>.github.io/courtfinder/`.
    From then on it refreshes itself every 15 minutes.
 
-## Before going live: check the first real scrape
+## Sources (checked in a real browser on 10 Nov 2026)
 
-The scraper reads the same data feed that Book a Court's booking sheet uses
-(`/v0/VenueBooking/<venue>/GetVenueSessions`). It couldn't be tested live while
-building this, so after the first run:
+| Source | How it's read | Venues |
+|---|---|---|
+| **Tennis Australia Court Finder** (Blacktown, Cumberland, Parramatta council courts and clubs) | `discover.py` searches around each area in `venues.json` → `discover`, then `adapters/clubspark.py` reads each venue's full timetable from play.tennis.com.au | Found automatically: e.g. Caroline Chisholm Park, Gallery Gardens, Timbergetters, Caber Park, Merrylands Park, Mays Hill… |
+| **Cricket NSW indoor net hire** (Cricket Central, Sydney Olympic Park) | `adapters/perfectmind.py`: opens each lane's page for a token, then asks for the week's times | 9 lanes, set up by hand in `venues.json` |
+| Venues on their own systems (e.g. Blacktown Tennis Centre Stanhope, members' login) | Can't be read; listed with a "Book on venue site" link | Found automatically |
+
+Every time slot links to that venue's booking page on the right date.
+
+## After the first run
 
 - Open the Action's log. Each venue prints `ok … N free slots` or `FAIL … reason`.
-- Open one venue's booking page in your browser and compare a few times with the app.
-- If you see `FormatChanged`, the site's data layout differs from what the
-  adapter expects. Open the booking page, press F12 → Network, reload, find the
-  request that returns the court times, and send its response to whoever
-  maintains this (or to Claude) to adjust `parse()` in `clubspark.py`.
-
-Note: Jonas Bradley Park (the starter venue) showed a "courts currently closed"
-notice when this was built, so it may return no free times. Add a few more
-venues to test properly.
+- Spot-check a couple of venues against their booking pages.
+- `FormatChanged` in the log means a site changed how it sends its data; the
+  venue keeps its last good times (marked "may be out of date") until the
+  adapter is updated.
 
 ## Adding venues
 
-Add an entry to `venues.json`. For any Book a Court / ClubSpark venue:
+**More tennis areas:** add a suburb + postcode to `discover`, e.g.
+`{"name": "Castle Hill", "postcode": "2154", "sport": "tennis", "proximity": 2}`.
+To hide a found venue, put its id (e.g. `"mays-hill-tennis-courts"`) in `exclude`.
+
+**More PerfectMind venues** (many councils' leisure centres use it): copy the
+Cricket Central entry. The IDs are in the URL when you open a facility's
+booking page (`facilityId`, `widgetId`, `calendarId`).
+
+**A single Book a Court / ClubSpark venue by hand:**
 
 ```json
 {

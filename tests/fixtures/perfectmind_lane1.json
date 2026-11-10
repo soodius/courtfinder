@@ -1,0 +1,10 @@
+{"availabilities":[
+ {"Date":"/Date(1794268800000)/","BookingGroups":[{"Name":"Afternoon","Order":1,"AvailableSpots":[
+   {"Time":{"Hours":16,"Minutes":0},"Duration":{"TotalMinutes":60},"IsDisabled":false,"Title":"Available"},
+   {"Time":{"Hours":16,"Minutes":30},"Duration":{"TotalMinutes":60},"IsDisabled":false,"Title":"Available"},
+   {"Time":{"Hours":17,"Minutes":0},"Duration":{"TotalMinutes":60},"IsDisabled":true,"Title":"Unavailable"}]},
+   {"Name":"Evening","Order":2,"AvailableSpots":[
+   {"Time":{"Hours":20,"Minutes":30},"Duration":{"TotalMinutes":60},"IsDisabled":false,"Title":"Available"}]}]},
+ {"Date":"/Date(1794355200000)/","BookingGroups":[{"Name":"Morning","Order":0,"AvailableSpots":[
+   {"Time":{"Hours":9,"Minutes":0},"Duration":{"TotalMinutes":60},"IsDisabled":false,"Title":"Available"}]}]}
+],"extraDaysInfo":{}}

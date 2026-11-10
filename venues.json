@@ -1,20 +1,41 @@
 {
-  "_help": "One entry per venue. 'platform' picks the scraper adapter. For Book a Court / ClubSpark venues, 'slug' is the part of the venue's booking URL after the domain, e.g. bookacourt.tennis.com.au/JonasBradleyPark -> JonasBradleyPark.",
+  "_help": "discover: areas searched on Tennis Australia's Court Finder each run; every venue found is added automatically. venues: venues added by hand (any platform). See README.",
   "days_ahead": 7,
+  "discover": [
+    {"name": "Blacktown", "postcode": "2148", "sport": "tennis", "proximity": 2},
+    {"name": "Kings Langley", "postcode": "2147", "sport": "tennis", "proximity": 2}
+  ],
+  "exclude": [],
   "venues": [
     {
-      "id": "jonas-bradley-park",
-      "name": "Jonas Bradley Park Tennis Courts",
-      "suburb": "The Ponds",
-      "address": "165 The Ponds Boulevard, The Ponds NSW 2769",
-      "sport": "tennis",
-      "lat": -33.7016,
-      "lng": 150.9105,
-      "platform": "clubspark",
-      "host": "play.tennis.com.au",
-      "slug": "JonasBradleyPark",
-      "booking_url": "https://bookacourt.tennis.com.au/JonasBradleyPark",
-      "price_note": "Council courts, pay online"
+      "id": "cricket-central-indoor-nets",
+      "name": "Cricket Central Indoor Nets (Cricket NSW)",
+      "suburb": "Sydney Olympic Park",
+      "address": "161 Silverwater Road, Sydney Olympic Park NSW 2127",
+      "sport": "cricket",
+      "lat": -33.8306,
+      "lng": 151.0590,
+      "platform": "perfectmind",
+      "host": "cricketnsw.perfectmind.com",
+      "org": "25726",
+      "widget_id": "aefdb220-4500-497a-ac8c-dfe26fceadd3",
+      "calendar_id": "18927c21-669e-4248-ad8e-abb2bf703d17",
+      "service_id": "00e5b91c-d45c-42b1-af55-e577f3e8c592",
+      "duration_id": "ec18a4c8-b5df-4584-b143-37c513004403",
+      "duration": 60,
+      "booking_url": "https://cricketnsw.perfectmind.com/25726/Clients/BookMe4FacilityList/List?calendarId=18927c21-669e-4248-ad8e-abb2bf703d17&widgetId=aefdb220-4500-497a-ac8c-dfe26fceadd3&embed=False&singleCalendarWidget=true",
+      "price_note": "Indoor nets · 1 hr bookings",
+      "lanes": [
+        {"name": "Lane 1", "facility_id": "e96c719c-11b8-49a5-9966-0230c4ff3efd"},
+        {"name": "Lane 2", "facility_id": "f3ca6e7e-475a-41ba-8431-2e2f8a533a11"},
+        {"name": "Lane 3", "facility_id": "c91be28a-0d7c-47e3-a7a8-20322fcf56a8"},
+        {"name": "Lane 4", "facility_id": "f566fdef-357f-4713-9d23-19c39d42c1e5"},
+        {"name": "Lane 5 (speed gun)", "facility_id": "c18ce3be-226e-4dd3-bc98-1c638e5544ef"},
+        {"name": "Lane 6", "facility_id": "0925cd00-c28d-4be3-b8c8-271efb295662"},
+        {"name": "Lane 7", "facility_id": "165fb0fa-5b69-4639-bdfb-a20120af99c4"},
+        {"name": "Lane 8 (speed gun)", "facility_id": "5b12130f-a56d-4659-8921-18394fb3fbe2"},
+        {"name": "Lane 9", "facility_id": "32680ac3-b109-463d-a090-34206fd6ae08"}
+      ]
     }
   ]
 }

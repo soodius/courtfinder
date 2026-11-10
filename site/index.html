@@ -38,6 +38,7 @@ main{padding:0 18px 60px}
 .slot:hover{border-color:var(--brand)}
 .slot::after{content:" ↗";font-size:11px;opacity:.6}
 .none{font-size:13px;color:var(--muted);margin-top:10px}
+.more{font-size:13px;font-weight:600;padding:7px 10px;border-radius:9px;background:#f0f2ef;color:var(--muted)}
 .foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px}
 .book{font-size:13px;font-weight:700;color:var(--brand)}
 .empty{text-align:center;color:var(--muted);padding:50px 20px}
@@ -59,7 +60,7 @@ main{padding:0 18px 60px}
 <script>
 const ICONS = {tennis:'🎾',basketball:'🏀',futsal:'⚽',soccer:'⚽',swimming:'🏊',badminton:'🏸',cricket:'🏏',pickleball:'🥒',netball:'🏐'};
 const HOME = {lat:-33.7426, lng:150.9213, label:'Kings Langley'}; // default centre until the browser shares location
-const S = {data:null, sport:'all', day:null, tod:'all', q:'', origin:HOME};
+const S = {data:null, sport:'all', day:null, tod:'all', q:'', origin:HOME, open:new Set()};
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = t => { const [h,m] = t.split(':').map(Number); return `${h%12||12}${m?':'+String(m).padStart(2,'0'):''}${h<12?'am':'pm'}`; };
@@ -99,10 +100,13 @@ function render(){
     html += `<div class="card">
       <div class="name">${ICONS[v.sport]||'🏟️'} ${esc(v.name)}${v.status==='stale'?'<span class="stale">May be out of date</span>':''}</div>
       <div class="meta">${esc(v.suburb)}${dist!=null?` · ${dist.toFixed(1)} km`:''}${v.price_note?` · ${esc(v.price_note)}`:''}</div>
-      ${courts.length ? courts.map(([c, ss]) => `<div class="court"><div class="court-name">${esc(c)}</div><div class="slots">${
-          ss.sort((a,b)=>a.start.localeCompare(b.start)).map(s=>`<a class="slot" href="${esc(s.booking_url)}" target="_blank" rel="noopener" title="Book ${esc(c)} at ${fmt(s.start)} on the venue's site">${fmt(s.start)}</a>`).join('')
-        }</div></div>`).join('') : `<div class="none">No free times in this window.</div>`}
-      <div class="foot"><span class="meta">Checked ${ago(v.updated)}</span>${v.booking_url?`<a class="book" href="${esc(v.booking_url)}" target="_blank" rel="noopener">Venue booking page ↗</a>`:''}</div>
+      ${v.status==='link_only' ? `<div class="none">This venue books through its own system, so times can't be shown here.</div>`
+        : courts.length ? courts.map(([c, ss]) => { const key = v.id+'|'+c; const all = ss.sort((a,b)=>a.start.localeCompare(b.start)); const show = S.open.has(key) ? all : all.slice(0,8);
+          return `<div class="court"><div class="court-name">${esc(c)} · ${all.length} free</div><div class="slots">${
+          show.map(s=>`<a class="slot" href="${esc(s.booking_url)}" target="_blank" rel="noopener" title="Book ${esc(c)} at ${fmt(s.start)} on the venue's site">${fmt(s.start)}</a>`).join('')
+          }${all.length>show.length?`<button class="more" data-k="${esc(key)}">+${all.length-show.length} more</button>`:''}</div></div>`; }).join('')
+        : `<div class="none">No free times in this window.</div>`}
+      <div class="foot"><span class="meta">${v.status==='link_only'?'':'Checked '+ago(v.updated)}</span>${v.booking_url?`<a class="book" href="${esc(v.booking_url)}" target="_blank" rel="noopener">${v.status==='link_only'?'Book on venue site':'Venue booking page'} ↗</a>`:''}</div>
     </div>`;
   }
   $('main').innerHTML = html;
@@ -112,6 +116,7 @@ $('sports').onclick = e => { const b=e.target.closest('[data-s]'); if(b){ S.spor
 $('days').onclick = e => { const b=e.target.closest('[data-d]'); if(b){ S.day=b.dataset.d; render(); } };
 $('tod').onclick = e => { const b=e.target.closest('[data-v]'); if(b){ S.tod=b.dataset.v; render(); } };
 $('q').oninput = e => { S.q=e.target.value; render(); };
+$('main').onclick = e => { const b=e.target.closest('.more'); if(b){ S.open.add(b.dataset.k); render(); } };
 
 async function load(){
   try{

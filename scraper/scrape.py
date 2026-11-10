@@ -16,6 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from adapters import ADAPTERS  # noqa: E402
+from discover import discover  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 VENUES = ROOT / "venues.json"
@@ -31,12 +32,15 @@ def load_previous() -> dict:
 
 
 def demo_slots(venue: dict, start: date, days: int) -> list[dict]:
+    if venue["platform"] == "link_only":
+        return []
     rnd = random.Random(venue["id"])
+    courts = [l["name"] for l in venue.get("lanes", [])][:4] or ["Court 1", "Court 2", "Court 3"]
     out = []
     for d in range(days):
         day = (start + timedelta(days=d)).isoformat()
-        for court in ("Court 1", "Court 2", "Court 3"):
-            for h in range(7, 22):
+        for court in courts:
+            for h in range(8, 22):
                 if rnd.random() < (0.3 if 17 <= h <= 20 else 0.6):
                     out.append({"date": day, "start": f"{h:02d}:00", "end": f"{h + 1:02d}:00",
                                 "court": court, "booking_url": venue.get("booking_url", "#")})
@@ -49,6 +53,22 @@ def main() -> int:
     args = ap.parse_args()
 
     cfg = json.loads(VENUES.read_text())
+    venues = list(cfg.get("venues", []))
+    if cfg.get("discover") and not args.demo:
+        try:
+            found = discover(cfg["discover"])
+            known = {v["id"] for v in venues} | set(cfg.get("exclude", []))
+            venues += [v for v in found if v["id"] not in known]
+            print(f"discovered {len(found)} venues via Tennis Australia Court Finder")
+        except Exception as e:  # fall back to last run's discovered venues
+            print(f"FAIL  discovery: {type(e).__name__}: {e}", file=sys.stderr)
+            known = {v["id"] for v in venues}
+            venues += [{**v, "platform": "link_only"} for v in load_previous().values() if v["id"] not in known]
+    if args.demo:  # use the real venues seen on 2026-11-10 so the demo looks like the live app
+        from discover import to_venues
+        fx = ROOT / "tests" / "fixtures" / "ta_search.json"
+        venues += to_venues(json.loads(fx.read_text()))
+    cfg["venues"] = venues
     days = int(cfg.get("days_ahead", 7))
     start = date.today()
     end = start + timedelta(days=days - 1)
@@ -66,7 +86,8 @@ def main() -> int:
                 if i:
                     time.sleep(POLITE_DELAY_S)
                 slots = ADAPTERS[v["platform"]](v, start, end)
-            info.update(slots=slots, updated=now, status="ok")
+            info.update(slots=slots, updated=now,
+                        status="link_only" if v["platform"] == "link_only" else "ok")
             print(f"ok    {v['id']}: {len(slots)} free slots")
         except Exception as e:  # keep last good data, flag it
             failures += 1

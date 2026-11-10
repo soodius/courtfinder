@@ -34,6 +34,20 @@ class ParseTests(unittest.TestCase):
         self.assertEqual(slots[0]["date"], "2026-11-12")
         self.assertEqual(slots[0]["booking_url"], "https://x/2026-11-12")
 
+    def test_real_caroline_chisholm_court1(self):
+        # Court 1, Caroline Chisholm Park, 10 Nov 2026 as returned by GetVenueSessions.
+        # The live booking sheet and Tennis Australia's Court Finder both showed
+        # 16:00 / 16:30 / 17:00 free that afternoon.
+        real = {"MinimumInterval": 30, "Resources": [{"Name": "Court 1", "Days": [{
+            "Date": "2026-11-10T00:00:00", "Sessions": [
+                {"Category": 0, "Capacity": 4, "StartTime": 480, "EndTime": 1020, "Interval": 30},
+                {"Category": 0, "Capacity": 4, "StartTime": 1020, "EndTime": 1110, "Interval": 30},
+                {"Category": 1000, "Capacity": 0, "StartTime": 1110, "EndTime": 1200, "Interval": 90},
+                {"Category": 1000, "Capacity": 0, "StartTime": 1200, "EndTime": 1260, "Interval": 60},
+                {"Category": 0, "Capacity": 4, "StartTime": 1260, "EndTime": 1320, "Interval": 30}]}]}]}
+        afternoon = [s["start"] for s in parse(real, str) if s["start"] >= "15:45"]
+        self.assertEqual(afternoon, ["16:00", "16:30", "17:00", "17:30", "18:00", "21:00", "21:30"])
+
     def test_unexpected_format_raises(self):
         with self.assertRaises(FormatChanged):
             parse({"something": "else"}, str)
